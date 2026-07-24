@@ -10,8 +10,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Look")]
     public Transform cameraTransform;
-    public float lookSensitivity = 0.08f;
-    public float lookSmooth = 20f;
+    public float lookSensitivity = 0.02f;
     public float pitchMin = -80f;
     public float pitchMax = 80f;
 
@@ -20,9 +19,6 @@ public class PlayerMovement : MonoBehaviour
 
     private float yVelocity;
     private float pitch;
-
-    private Vector2 currentLook;
-    private Vector2 targetLook;
 
     private void Start()
     {
@@ -33,65 +29,85 @@ public class PlayerMovement : MonoBehaviour
         Cursor.visible = false;
 
         if (cameraTransform == null && Camera.main != null)
+        {
             cameraTransform = Camera.main.transform;
+        }
 
         if (input == null)
+        {
             Debug.LogError("PlayerMovement: InputManager not found.");
+        }
 
         if (cameraTransform == null)
+        {
             Debug.LogError("PlayerMovement: Camera not assigned.");
+        }
     }
 
     private void Update()
     {
-        if (MonitorScript.IsComputerOpen)
-            return;
-
         HandleMovement();
         HandleLook();
     }
 
     private void HandleMovement()
     {
-        if (input == null) return;
+        if (input == null || controller == null)
+        {
+            return;
+        }
 
         Vector2 moveInput = input.MoveInput;
-        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
+
+        Vector3 move =
+            transform.right * moveInput.x +
+            transform.forward * moveInput.y;
 
         controller.Move(move * moveSpeed * Time.deltaTime);
 
         if (controller.isGrounded)
         {
             if (yVelocity < 0f)
+            {
                 yVelocity = -2f;
+            }
 
             if (input.JumpPressedThisFrame)
             {
-                yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                yVelocity =
+                    Mathf.Sqrt(jumpHeight * -2f * gravity);
             }
         }
 
         yVelocity += gravity * Time.deltaTime;
-        controller.Move(Vector3.up * yVelocity * Time.deltaTime);
+
+        controller.Move(
+            Vector3.up * yVelocity * Time.deltaTime
+        );
     }
 
     private void HandleLook()
     {
-        if (input == null || cameraTransform == null) return;
+        if (input == null || cameraTransform == null)
+        {
+            return;
+        }
 
-        targetLook = input.LookInput * lookSensitivity;
+        Vector2 lookInput =
+            input.LookInput * lookSensitivity;
 
-        currentLook = Vector2.Lerp(
-            currentLook,
-            targetLook,
-            1f - Mathf.Exp(-lookSmooth * Time.deltaTime)
+        transform.Rotate(
+            Vector3.up * lookInput.x
         );
 
-        transform.Rotate(Vector3.up * currentLook.x);
+        pitch -= lookInput.y;
+        pitch = Mathf.Clamp(
+            pitch,
+            pitchMin,
+            pitchMax
+        );
 
-        pitch -= currentLook.y;
-        pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
-
-        cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        cameraTransform.localRotation =
+            Quaternion.Euler(pitch, 0f, 0f);
     }
 }

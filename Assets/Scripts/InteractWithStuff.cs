@@ -4,13 +4,13 @@ using UnityEngine.InputSystem;
 public class InteractWithStuff : MonoBehaviour
 {
     [Header("Settings")]
-    public float interactDistance = 3f;
-    public LayerMask interactLayer;
-    public Color highlightColor = Color.yellow;
-    public Camera playerCamera;
+    [SerializeField] private float interactDistance = 3f;
+    [SerializeField] private LayerMask interactLayer;
+    [SerializeField] private Color highlightColor = Color.yellow;
+    [SerializeField] private Camera playerCamera;
 
     [Header("UI")]
-    public GameObject interactPrompt;
+    [SerializeField] private GameObject interactPrompt;
 
     private Renderer lastRenderer;
     private Material[] lastMaterials;
@@ -20,69 +20,92 @@ public class InteractWithStuff : MonoBehaviour
     private void Start()
     {
         if (playerCamera == null)
+        {
             playerCamera = Camera.main;
+        }
 
         if (playerCamera == null)
-            Debug.LogError("Camera not assigned.");
+        {
+            Debug.LogError("InteractWithStuff: Camera not assigned.");
+        }
 
+        HidePrompt();
+    }
+
+    private void OnDisable()
+    {
+        ClearHighlight();
         HidePrompt();
     }
 
     private void Update()
     {
-        if (playerCamera == null) return;
-
-        if (MonitorScript.IsComputerOpen)
+        if (playerCamera == null)
         {
-            ClearHighlight();
-            HidePrompt();
-
-           // if (Keyboard.current.eKey.wasPressedThisFrame)
-            //    MonitorScript.CurrentOpenMonitor?.Interact();
-
             return;
         }
 
         HighlightCheck();
 
-        if (Keyboard.current.eKey.wasPressedThisFrame)
+        if (Keyboard.current != null &&
+            Keyboard.current.eKey.wasPressedThisFrame)
+        {
             PerformInteraction();
+        }
     }
 
     private Ray GetRay()
     {
-        return new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        return new Ray(
+            playerCamera.transform.position,
+            playerCamera.transform.forward
+        );
     }
 
     private void HighlightCheck()
     {
         Ray ray = GetRay();
 
-        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactLayer))
+        if (Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                interactDistance,
+                interactLayer))
         {
-            Renderer rend = hit.collider.GetComponent<Renderer>();
+            IInteractable interactable =
+                hit.collider.GetComponent<IInteractable>();
 
-            if (rend == null)
+            if (interactable == null)
+            {
+                interactable =
+                    hit.collider.GetComponentInParent<IInteractable>();
+            }
+
+            if (interactable == null)
             {
                 ClearHighlight();
                 HidePrompt();
                 return;
             }
 
+            Renderer rend = hit.collider.GetComponent<Renderer>();
+
+            if (rend == null)
+            {
+                rend = hit.collider.GetComponentInParent<Renderer>();
+            }
+
             if (rend != lastRenderer)
             {
                 ClearHighlight();
-                ApplyHighlight(rend);
+
+                if (rend != null)
+                {
+                    ApplyHighlight(rend);
+                }
             }
 
-            IInteractable interactable = hit.collider.GetComponent<IInteractable>();
-            if (interactable == null)
-                interactable = hit.collider.GetComponentInParent<IInteractable>();
-
-            if (interactable != null)
-                ShowPrompt();
-            else
-                HidePrompt();
+            ShowPrompt();
         }
         else
         {
@@ -93,31 +116,37 @@ public class InteractWithStuff : MonoBehaviour
 
     private void PerformInteraction()
     {
-        Debug.Log("PerformInteraction called!"); // додај ова
         Ray ray = GetRay();
 
-        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactLayer))
+        if (!Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                interactDistance,
+                interactLayer))
         {
-            Debug.Log("Hit object: " + hit.collider.name);
-
-            IInteractable interactable = hit.collider.GetComponent<IInteractable>();
-            if (interactable == null)
-                interactable = hit.collider.GetComponentInParent<IInteractable>();
-
-            if (interactable != null)
-            {
-                Debug.Log("INTERACT FOUND");
-                interactable.Interact();
-            }
-            else
-            {
-                Debug.Log("NO INTERACTABLE");
-            }
+            Debug.Log("InteractWithStuff: No interactable object hit.");
+            return;
         }
-        else
+
+        IInteractable interactable =
+            hit.collider.GetComponent<IInteractable>();
+
+        if (interactable == null)
         {
-            Debug.Log("NO HIT");
+            interactable =
+                hit.collider.GetComponentInParent<IInteractable>();
         }
+
+        if (interactable == null)
+        {
+            Debug.Log(
+                $"InteractWithStuff: {hit.collider.name} has no IInteractable."
+            );
+            return;
+        }
+
+        Debug.Log($"Interacting with: {hit.collider.name}");
+        interactable.Interact();
     }
 
     private void ApplyHighlight(Renderer rend)
@@ -125,16 +154,32 @@ public class InteractWithStuff : MonoBehaviour
         lastRenderer = rend;
         lastMaterials = rend.materials;
 
-        originalEmissionColors = new Color[lastMaterials.Length];
-        originalEmissionEnabled = new bool[lastMaterials.Length];
+        originalEmissionColors =
+            new Color[lastMaterials.Length];
+
+        originalEmissionEnabled =
+            new bool[lastMaterials.Length];
 
         for (int i = 0; i < lastMaterials.Length; i++)
         {
-            originalEmissionEnabled[i] = lastMaterials[i].IsKeywordEnabled("_EMISSION");
-            originalEmissionColors[i] = lastMaterials[i].GetColor("_EmissionColor");
+            Material material = lastMaterials[i];
 
-            lastMaterials[i].EnableKeyword("_EMISSION");
-            lastMaterials[i].SetColor("_EmissionColor", highlightColor * 2f);
+            originalEmissionEnabled[i] =
+                material.IsKeywordEnabled("_EMISSION");
+
+            originalEmissionColors[i] =
+                material.HasProperty("_EmissionColor")
+                    ? material.GetColor("_EmissionColor")
+                    : Color.black;
+
+            if (material.HasProperty("_EmissionColor"))
+            {
+                material.EnableKeyword("_EMISSION");
+                material.SetColor(
+                    "_EmissionColor",
+                    highlightColor * 2f
+                );
+            }
         }
     }
 
@@ -144,10 +189,23 @@ public class InteractWithStuff : MonoBehaviour
         {
             for (int i = 0; i < lastMaterials.Length; i++)
             {
-                lastMaterials[i].SetColor("_EmissionColor", originalEmissionColors[i]);
+                Material material = lastMaterials[i];
+
+                if (material == null ||
+                    !material.HasProperty("_EmissionColor"))
+                {
+                    continue;
+                }
+
+                material.SetColor(
+                    "_EmissionColor",
+                    originalEmissionColors[i]
+                );
 
                 if (!originalEmissionEnabled[i])
-                    lastMaterials[i].DisableKeyword("_EMISSION");
+                {
+                    material.DisableKeyword("_EMISSION");
+                }
             }
         }
 
@@ -159,13 +217,19 @@ public class InteractWithStuff : MonoBehaviour
 
     private void ShowPrompt()
     {
-        if (interactPrompt != null && !interactPrompt.activeSelf)
+        if (interactPrompt != null &&
+            !interactPrompt.activeSelf)
+        {
             interactPrompt.SetActive(true);
+        }
     }
 
     private void HidePrompt()
     {
-        if (interactPrompt != null && interactPrompt.activeSelf)
+        if (interactPrompt != null &&
+            interactPrompt.activeSelf)
+        {
             interactPrompt.SetActive(false);
+        }
     }
 }
