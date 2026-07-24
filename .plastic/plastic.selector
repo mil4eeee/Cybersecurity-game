@@ -1,0 +1,4 @@
+repository "NVD game/NVD game@6872809768966@cloud"
+  path "/"
+    br "/main"
+    co "/main"
