@@ -13,6 +13,9 @@ public class LessonManager : MonoBehaviour
     [SerializeField] private TMP_Text warningSignsText;
     [SerializeField] private Image lessonImage;
 
+    [Header("Top Bar UI")]
+    [SerializeField] private TMP_Text currentLessonText;
+
     private int currentLessonIndex = 0;
 
     private void Start()
@@ -30,21 +33,13 @@ public class LessonManager : MonoBehaviour
 
         if (currentLessonIndex < 0 || currentLessonIndex >= lessons.Length)
         {
-            Debug.LogError("LessonManager: Current lesson index is invalid.");
+            Debug.LogError("LessonManager: Invalid lesson index.");
             return;
         }
 
-        if (lessonTitleText == null ||
-            lessonDescriptionText == null ||
-            warningSignsText == null)
-        {
-            Debug.LogError("LessonManager: One or more UI references are missing.");
-            return;
-        }
+        LessonData lesson = lessons[currentLessonIndex];
 
-        LessonData currentLesson = lessons[currentLessonIndex];
-
-        if (currentLesson == null)
+        if (lesson == null)
         {
             Debug.LogError(
                 $"LessonManager: Lesson at index {currentLessonIndex} is empty."
@@ -52,15 +47,32 @@ public class LessonManager : MonoBehaviour
             return;
         }
 
-        lessonTitleText.text = currentLesson.lessonTitle;
-        lessonDescriptionText.text = currentLesson.lessonDescription;
-        warningSignsText.text = currentLesson.warningSigns;
+        if (lessonTitleText != null)
+        {
+            lessonTitleText.text = lesson.lessonTitle;
+        }
+
+        if (lessonDescriptionText != null)
+        {
+            lessonDescriptionText.text = lesson.lessonDescription;
+        }
+
+        if (warningSignsText != null)
+        {
+            warningSignsText.text = lesson.warningSigns;
+        }
+
+        if (currentLessonText != null)
+        {
+            currentLessonText.text =
+                $"Lesson {currentLessonIndex + 1:00}";
+        }
 
         if (lessonImage != null)
         {
-            if (currentLesson.lessonImage != null)
+            if (lesson.lessonImage != null)
             {
-                lessonImage.sprite = currentLesson.lessonImage;
+                lessonImage.sprite = lesson.lessonImage;
                 lessonImage.gameObject.SetActive(true);
             }
             else
@@ -82,6 +94,10 @@ public class LessonManager : MonoBehaviour
             currentLessonIndex++;
             LoadCurrentLesson();
         }
+        else
+        {
+            Debug.Log("LessonManager: Already on the final lesson.");
+        }
     }
 
     public void PreviousLesson()
@@ -96,6 +112,10 @@ public class LessonManager : MonoBehaviour
             currentLessonIndex--;
             LoadCurrentLesson();
         }
+        else
+        {
+            Debug.Log("LessonManager: Already on the first lesson.");
+        }
     }
 
     public LessonData GetCurrentLesson()
@@ -109,5 +129,10 @@ public class LessonManager : MonoBehaviour
         }
 
         return lessons[currentLessonIndex];
+    }
+
+    public int GetCurrentLessonIndex()
+    {
+        return currentLessonIndex;
     }
 }
