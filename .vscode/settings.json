@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Cybersecurity-game.slnx"
+    "dotnet.defaultSolution": "AccidentalProject.slnx"
 }
