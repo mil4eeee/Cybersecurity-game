@@ -16,7 +16,7 @@ MonoBehaviour:
   lessonDescription: 'Phishing is a cyberattack in which an attacker pretends to
     be a trusted person or organization in order to steal sensitive information.
 
-    
+
 
     Attackers
     commonly imitate banks, social media platforms, delivery companies, employers,
@@ -25,3 +25,45 @@ MonoBehaviour:
     or threatening language\r\n\u2022 Unexpected links or attachments\r\n\u2022 Requests
     for passwords or payment information"
   lessonImage: {fileID: 0}
+  senderName: Microsoft Security
+  senderAddress: security-team@micros0ft-support.com
+  emailSubject: "URGENT \u2014 Your account will be suspended"
+  emailBody: 'Dear user,
+
+    
+
+    We detected unusual activity on your account.
+
+    
+
+    Your
+    account will be permanently suspended within 24 hours unless you verify your
+    identity immediately.
+
+    
+
+    Click the link below and enter your password
+    to keep your account active.
+
+    
+
+    Regards,
+
+    Microsoft Security Team'
+  displayedLink: http://microsoft-account-verification.security-check.ru
+  isPhishing: 1
+  correctFeedback: 'Correct. This is a phishing email.
+
+
+    The sender address contains
+    a misspelled company name, the message creates urgency, and the link uses an
+    unrelated domain. A legitimate company would not ask you to enter your password
+    through a suspicious link.'
+  incorrectFeedback: 'Incorrect. This email is a phishing attempt.
+
+    
+
+    Look
+    closely at the sender address, the threatening language, the request for a password,
+    and the suspicious website domain.'
+  xpReward: 100
